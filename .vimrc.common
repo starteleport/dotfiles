@@ -1,0 +1,280 @@
+" VIM/NVIM common configuration file
+"
+" This file is sourced both by VIM and NVIM, I place common settings here.
+
+execute pathogen#infect()
+
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent execute "!curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+  autocmd VimEnter * PlugInstall | source $MYVIMRC
+endif
+
+" With a map leader it's possible to do extra key combinations
+" like <leader>w saves the current file
+let mapleader = "\<space>"
+let maplocalleader = "\<space>"
+
+" Settings: {{{
+"
+filetype indent plugin on
+if !exists('g:syntax_on') | syntax enable | endif
+set encoding=utf-8
+scriptencoding utf-8
+
+" Set to auto read when a file is changed from the outside
+set autoread
+
+" Fast saving
+"nmap <leader>w :w!<cr>
+
+" Set leader key timeout
+set timeoutlen=1500
+set ttimeoutlen=5
+
+" Set 7 lines to the cursor - when moving vertically using j/k
+set so=7
+
+" Turn on the Wild menu
+set wildmenu
+
+" Ignore compiled files
+set wildignore=*.o,*~,*.pyc
+if has("win16") || has("win32")
+    set wildignore+=.git\*,.hg\*,.svn\*
+else
+    set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
+endif
+
+set expandtab
+set smarttab
+set shiftround
+set shiftwidth=2
+set softtabstop=-1
+set tabstop=8
+set textwidth=100
+set title
+
+set ai "Auto indent
+set si "Smart indent
+set wrap "Wrap lines
+
+" A buffer becomes hidden when it is abandoned
+set hidden
+
+" Configure backspace so it acts as it should act
+set whichwrap+=<,>,h,l,[,]
+set backspace=indent,eol,start
+
+set nofixendofline
+set nostartofline
+set splitbelow
+set splitright
+
+" Don't redraw while executing macros (good performance config)
+set lazyredraw
+
+" For regular expressions turn magic on
+set magic
+
+" When searching try to be smart about cases
+set smartcase
+
+set hlsearch
+set incsearch
+set ignorecase
+set laststatus=2
+set number
+set noruler
+set noshowmode
+set signcolumn=yes
+
+" Add a bit extra margin to the left
+set foldcolumn=1
+
+set mouse=a
+set updatetime=1000
+
+if has('persistent_undo')
+  set undofile	" keep an undo file (undo changes after closing)
+  set nobackup
+else
+  set backup
+endif
+
+if &t_Co > 2 || has("gui_running")
+  " Switch on highlighting the last used search pattern.
+  set hlsearch
+  set incsearch
+endif
+
+" Using system clipboard
+if has('clipboard')
+  "set clipboard=unnamed
+endif
+
+" No annoying sound on errors
+set noerrorbells
+set novisualbell
+set t_vb=
+
+" Properly disable sound on errors on MacVim
+if has("gui_macvim")
+    autocmd GUIEnter * set vb t_vb=
+endif
+
+" Remap VIM 0 to first non-blank character
+noremap 0 ^
+
+" Disable highlight when <leader><cr> is pressed
+noremap <silent> <leader><cr> :noh<cr>
+
+" Quickly open a buffer for scribble
+noremap <leader>xx :e ~/scratch.md<cr>
+
+" Smart way to move between windows
+"noremap <C-j> <C-W>j
+"noremap <C-k> <C-W>k
+"noremap <C-h> <C-W>h
+"noremap <C-l> <C-W>l
+
+" Save file as sudo on files that require root permission
+cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
+
+" Close the current buffer
+noremap <leader>bd :Bclose<cr>
+
+" Close all the buffers
+noremap <leader>ba :bufdo bd<cr>
+
+noremap ]b :bnext<cr>
+noremap [b :bprevious<cr>
+
+" Specify the behavior when switching between buffers
+try
+  set switchbuf=useopen,usetab,newtab
+  set stal=2
+catch
+endtry
+
+" Useful mappings for managing tabs
+noremap <leader>tn :tabnew<cr>
+noremap <leader>to :tabonly<cr>
+noremap <leader>tc :tabclose<cr>
+noremap <leader>tm :tabmove
+noremap <leader>t<leader> :tabnext<cr>
+
+" Opens a new tab with the current buffer's path
+" Super useful when editing files in the same directory
+map <leader>te :tabedit <C-r>=escape(expand("%:p:h"), " ")<cr>/
+
+" Let 'tl' toggle between this and the last accessed tab
+let g:lasttab = 1
+nnoremap <leader>tl :exe "tabn ".g:lasttab<CR>
+
+augroup lasttab
+  au!
+  au TabLeave * let g:lasttab = tabpagenr()
+augroup END
+
+" Switch CWD to the directory of the open buffer
+noremap <leader>cd :cd %:p:h<cr>:pwd<cr>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Spell checking
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Pressing ,ss will toggle and untoggle spell checking
+noremap <leader>ss :setlocal spell!<cr>
+
+" Shortcuts using <leader>
+noremap <leader>sn ]s
+noremap <leader>sp [s
+noremap <leader>sa zg
+noremap <leader>s? z=
+
+" Debugging highlighting
+nnoremap <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
+\ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+\ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
+
+" Return to last edit position when opening files (You want this!)
+augroup lastedit
+  au!
+  au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+augroup END
+
+"Check if any buffers were changed outside of Vim.
+augroup autoreload
+  au!
+  au FocusGained,BufEnter,CursorHold * silent! checktime
+augroup END
+
+" Automatically deletes all trailing whitespace and newlines at end of file on save. & reset cursor position
+augroup trailing_whitespace
+  au!
+  autocmd BufWritePre * let currPos = getpos(".")
+  autocmd BufWritePre * %s/\s\+$//e
+  autocmd BufWritePre * %s/\n\+\%$//e
+  autocmd BufWritePre *.[ch] %s/\%$/\r/e
+  autocmd BufWritePre * cal cursor(currPos[1], currPos[2])
+augroup END
+" }}}
+
+" Colors: {{{
+
+" Use truecolor in the terminal, when it is supported
+if has('termguicolors')
+  set termguicolors
+endif
+
+set background=dark
+
+let g:gruvbox_material_better_performance = 1
+let g:gruvbox_material_background = 'hard'
+let g:gruvbox_material_foreground = 'material'
+let g:gruvbox_material_enable_bold = 1
+let g:gruvbox_material_ui_contrast = 'high'
+
+" }}}
+
+augroup filetypes
+  au!
+
+  " For all text files set 'textwidth' to 78 characters.
+  autocmd FileType text setlocal textwidth=78
+
+  " For all csharp files set shift width to 4
+  autocmd FileType cs setlocal shiftwidth=4
+
+  au BufRead,BufNewFile *.csx set filetype=cs
+augroup END
+
+" Add optional packages.
+"
+" The matchit plugin makes the % command work better, but it is not backwards
+" compatible.
+" The ! means the package won't be loaded right away but when plugins are
+" loaded during initialization.
+if has('syntax') && has('eval')
+  packadd! matchit
+endif
+
+" Don't close window, when deleting a buffer
+command! Bclose call <SID>BufcloseCloseIt()
+function! <SID>BufcloseCloseIt()
+    let l:currentBufNum = bufnr("%")
+    let l:alternateBufNum = bufnr("#")
+
+    if buflisted(l:alternateBufNum)
+        buffer #
+    else
+        bnext
+    endif
+
+    if bufnr("%") == l:currentBufNum
+        new
+    endif
+
+    if buflisted(l:currentBufNum)
+        execute("bdelete! ".l:currentBufNum)
+    endif
+endfunction

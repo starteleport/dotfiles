@@ -1,0 +1,24 @@
+[user]
+	name = Nikolay Baraboshkin
+	email = starteleport@yandex.ru
+[core]
+	excludesfile = /Users/starteleport/.gitignore_global
+[difftool "sourcetree"]
+	cmd = /Applications/kdiff3.app/Contents/MacOS/kdiff3 \"$LOCAL\" \"$REMOTE\"
+	path =
+[mergetool "sourcetree"]
+	cmd = /Applications/kdiff3.app/Contents/MacOS/kdiff3 \"$BASE\" \"$LOCAL\" \"$REMOTE\" -o \"$MERGED\"
+	trustExitCode = true
+[commit]
+	template = /Users/starteleport/.stCommitMsg
+[merge]
+	tool = kdiff3
+[diff]
+	tool = kdiff3
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[pull]
+	rebase = false
