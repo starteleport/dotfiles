@@ -177,7 +177,7 @@ augroup lasttab
 augroup END
 
 " Switch CWD to the directory of the open buffer
-noremap <leader>cd :cd %:p:h<cr>:pwd<cr>
+" noremap <leader>cd :cd %:p:h<cr>:pwd<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Spell checking
@@ -209,14 +209,14 @@ augroup autoreload
 augroup END
 
 " Automatically deletes all trailing whitespace and newlines at end of file on save. & reset cursor position
-augroup trailing_whitespace
-  au!
-  autocmd BufWritePre * let currPos = getpos(".")
-  autocmd BufWritePre * %s/\s\+$//e
-  autocmd BufWritePre * %s/\n\+\%$//e
-  autocmd BufWritePre *.[ch] %s/\%$/\r/e
-  autocmd BufWritePre * cal cursor(currPos[1], currPos[2])
-augroup END
+"augroup trailing_whitespace
+"  au!
+"  autocmd BufWritePre * let currPos = getpos(".")
+"  autocmd BufWritePre * %s/\s\+$//e
+"  autocmd BufWritePre * %s/\n\+\%$//e
+"  autocmd BufWritePre *.[ch] %s/\%$/\r/e
+"  autocmd BufWritePre * cal cursor(currPos[1], currPos[2])
+"augroup END
 " }}}
 
 " Colors: {{{

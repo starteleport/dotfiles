@@ -62,6 +62,8 @@ Plug 'nvim-telescope/telescope-ui-select.nvim'
 
 Plug 'rest-nvim/rest.nvim'
 Plug 'hrsh7th/cmp-nvim-lsp-signature-help'
+
+Plug 'bkad/CamelCaseMotion'
 call plug#end()
 " }}}
 
@@ -82,6 +84,12 @@ let g:session_default_name = fnamemodify(getcwd(), ':t')
 "
 let g:indent_blankline_use_treesitter = v:true
 let g:indent_blankline_use_treesitter_scope = v:true
+
+" }}}
+
+" CamelCaseMotion {{{
+"
+let g:camelcasemotion_key = ','
 
 " }}}
 
@@ -117,6 +125,8 @@ call sign_define("DiagnosticSignInfo", {
 call sign_define("DiagnosticSignHint", {
 \ "text" : "·",
 \ "texthl" : "DiagnosticSignHint"})
+
+au FileType gitcommit,diff let b:editorconfig = v:false
 
 lua << END
   -- disable netrw at the very start of your init.lua (strongly advised)
@@ -219,9 +229,9 @@ lua << END
       dotfiles = true,
     },
     actions = {
-      --change_dir = {
-      --  global = true,
-      --},
+      change_dir = {
+        global = true,
+      },
     },
     diagnostics = {
       enable = true,
@@ -405,24 +415,21 @@ lua << END
         b = { function() builtin.diagnostics { bufnr = 0 } end, "Show buffer diagnostics in Telescope" },
         k = { vim.diagnostic.open_float, "Show disgnostics under cursor" },
         l = { vim.diagnostic.setloclist, "Show buffer diagnostics in loclist" },
+      },
+      c = {
+        name = "Code actions",
+        a = { vim.lsp.buf.code_action, "Code actions under cursor" },
+        A = { function() vim.lsp.buf.code_action { range = "%" } end, "Code actions in buffer" },
+        r = { vim.lsp.buf.rename, "Rename" },
+      },
+      ["="] = { function() vim.lsp.buf.format { async = true } end, "Format buffer" },
+      w = {
+        name = "Workspace",
+        a = { vim.lsp.buf.add_workspace_folder, "Add workspace folder" },
+        r = { vim.lsp.buf.remove_workspace_folder, "Remove workspace folder" },
       }
     }, { prefix = "<leader>", buffer = bufnr })
 
-    vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, bufopts)
-    vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, bufopts)
-
-    vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, bufopts)
-    vim.keymap.set({'n', 'v'}, '<leader>ca', vim.lsp.buf.code_action, bufopts)
-    vim.keymap.set('n', '<leader>cA', function() vim.lsp.buf.code_action { range = "%" } end, bufopts)
-    vim.keymap.set({'n', 'v'}, '<leader>=', function() vim.lsp.buf.format { async = true } end, bufopts)
-
-    if client.name == "omnisharp" then
-      print(vim.inspect(client.server_capabilities))
-      client.server_capabilities.semanticTokensProvider.legend = {
-        tokenModifiers = { "static" },
-        tokenTypes = { "comment", "excluded", "identifier", "keyword", "keyword", "number", "operator", "operator", "preprocessor", "string", "whitespace", "text", "static", "preprocessor", "punctuation", "string", "string", "class", "delegate", "enum", "interface", "module", "struct", "typeParameter", "field", "enumMember", "constant", "local", "parameter", "method", "method", "property", "event", "namespace", "label", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "xml", "regexp", "regexp", "regexp", "regexp", "regexp", "regexp", "regexp", "regexp", "regexp" }
-      }
-    end
   end
 
   ---- setting up lsp-config
@@ -441,36 +448,12 @@ lua << END
     on_attach = on_attach,
   }
 
-  ---- setting up lsp-config
-  --local util = require('lspconfig').util
-  --local capabilities = require('cmp_nvim_lsp').default_capabilities()
-
-  --require'lspconfig'.omnisharp.setup {
-  --  handlers = {
-  --    ["textDocument/definition"] = require('omnisharp_extended').handler,
-  --  },
-  --  capabilities = capabilities,
-  --  root_dir = function(file, _)
-  --    if file:sub(-#".csx") == ".csx" then
-  --      return util.path.dirname(file)
-  --    end
-  --    return util.root_pattern("*.sln")(file) or util.root_pattern("*.csproj")(file)
-  --  end,
-  --  on_attach = on_attach,
-
-  --  cmd = { "omnisharp" },
-  --  enable_editorconfig_support = true,
-  --  enable_roslyn_analyzers = true,
-  --  organize_imports_on_format = true,
-  --  enable_import_completion = true,
-  --  -- Specifies whether to include preview versions of the .NET SDK when
-  --  -- determining which version to use for project loading.
-  --  sdk_include_prereleases = true,
-  --}
-
   require('lspconfig').yamlls.setup {
     settings = {
       yaml = {
+        schemaStore = {
+          enable = true,
+        },
         schemas = {
           ["https://json.schemastore.org/github-workflow.json"] = "/.github/workflows/*"
         },
@@ -527,33 +510,57 @@ lua << END
       end
 
       -- Navigation
-      map('n', ']c', function()
-        if vim.wo.diff then return ']c' end
-        vim.schedule(function() gs.next_hunk() end)
-        return '<Ignore>'
-      end, {expr=true})
-
-      map('n', '[c', function()
-        if vim.wo.diff then return '[c' end
-        vim.schedule(function() gs.prev_hunk() end)
-        return '<Ignore>'
-      end, {expr=true})
+      wk.register({
+        ["]h"] = {
+          function()
+            if vim.wo.diff then return ']c' end
+            vim.schedule(function() gs.next_hunk() end)
+            return '<Ignore>'
+          end,
+          "Goto next hunk"
+        },
+        ["[h"] = {
+          function()
+            if vim.wo.diff then return ']c' end
+            vim.schedule(function() gs.prev_hunk() end)
+            return '<Ignore>'
+          end,
+          "Goto previous hunk"
+        },
+      }, { expr = true })
 
       -- Actions
-      map({'n', 'v'}, '<leader>hs', ':Gitsigns stage_hunk<CR>')
-      map({'n', 'v'}, '<leader>hr', ':Gitsigns reset_hunk<CR>')
-      map('n', '<leader>hS', gs.stage_buffer)
-      map('n', '<leader>hu', gs.undo_stage_hunk)
-      map('n', '<leader>hR', gs.reset_buffer)
-      map('n', '<leader>hp', gs.preview_hunk)
-      map('n', '<leader>hb', function() gs.blame_line{full=true} end)
-      map('n', '<leader>tb', gs.toggle_current_line_blame)
-      map('n', '<leader>hd', gs.diffthis)
-      map('n', '<leader>hD', function() gs.diffthis('~') end)
-      map('n', '<leader>td', gs.toggle_deleted)
+      wk.register({
+        h = {
+          name = "Git",
+          s = { gs.stage_hunk, "Stage hunk" },
+          r = { gs.reset_hunk, "Reset hunk" },
+        }
+      }, { mode = { 'n', 'v' }, prefix = "<leader>" })
+
+      wk.register({
+        h = {
+          name = "Git",
+          S = { gs.stage_buffer, "Stage buffer" },
+          u = { gs.undo_stage_hunk, "Unstage last hunk" },
+          U = { gs.reset_buffer_index, "Unstage buffer" },
+          R = { gs.reset_buffer, "Reset buffer" },
+          p = { gs.preview_hunk, "Preview hunk" },
+          d = { gs.diffthis, "Diff buffer to index" },
+          D = { function() gs.diffthis('~') end, "Diff buffer to previous commit" },
+          b = { function() gs.blame_line{full=true} end, "Show line blame" },
+          t = {
+            name = "Toggle",
+            b = { gs.toggle_current_line_blame, "Current line blame" },
+            d = { gs.toggle_deleted, "Deleted lines" },
+          }
+        }
+      }, { prefix = "<leader>" })
 
       -- Text object
-      map({'o', 'x'}, 'ih', ':<C-U>Gitsigns select_hunk<CR>')
+      wk.register({
+        ["ih"] = { ':<C-U>Gitsigns select_hunk<CR>', "Select hunk" }
+      }, { mode = { 'o', 'x' } })
     end
   })
 
